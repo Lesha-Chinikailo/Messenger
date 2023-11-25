@@ -1,10 +1,65 @@
+using System;
+
+using FireSharp.Config;
+using FireSharp.Interfaces;
+using FireSharp.Response;
+
+
 namespace SignIn
 {
-    public partial class Form1 : Form
+    public partial class SignIn : Form
     {
-        public Form1()
+        private IFirebaseConfig _config = new FirebaseConfig()
+        {
+            AuthSecret = "yfvpDIIYfiM64RZYxlaTr7sQ0shK88Sm8Qany2EZ",
+            BasePath = "https://messenger-11e03-default-rtdb.firebaseio.com/",
+        };
+        private IFirebaseClient _client;
+        public SignIn()
         {
             InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                _client = new FireSharp.FirebaseClient(_config);
+
+                if (_client != null)
+                {
+                    this.CenterToScreen();
+                    //this.Size = Screen.PrimaryScreen.WorkingArea.Size;
+                    //this.WindowState = FormWindowState.Normal;
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Connection Fail.");
+            }
+        }
+
+        private void btnSignIn_Click(object sender, EventArgs e)
+        {
+            if(string.IsNullOrEmpty(txbEmail.Text) && string.IsNullOrEmpty(txbPassword.Text))
+            {
+                MessageBox.Show("enter all date");
+                return;
+            }
+            FirebaseResponse response = _client.Get("Users/");
+            //Dictionary<string, User> users = response.ResultAs<Dictionary<string, User>>();
+            List<User> users = response.ResultAs<List<User>>();
+
+            foreach (var user in users)
+            {
+                if(txbEmail.Text == user.Email)
+                {
+                    if(txbPassword.Text == user.Password)
+                    {
+                        MessageBox.Show("Welcome " + user.Name);
+                    }
+                }
+            }
         }
     }
 }
