@@ -71,6 +71,7 @@
             linkSignUp.TabIndex = 3;
             linkSignUp.TabStop = true;
             linkSignUp.Text = "Don't have an account?";
+            linkSignUp.LinkClicked += linkSignUp_LinkClicked;
             // 
             // txbPassword
             // 
@@ -101,6 +102,7 @@
             Controls.Add(labEmail);
             Name = "SignIn";
             Text = "SignIn";
+            FormClosed += SignIn_FormClosed;
             Load += Form1_Load;
             ResumeLayout(false);
             PerformLayout();
