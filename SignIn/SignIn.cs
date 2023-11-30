@@ -66,7 +66,8 @@ namespace SignIn
                 {
                     if (txbPassword.Text == user.Password)
                     {
-                        MessageBox.Show("Welcome " + user.Name);
+                        new Thread(() => Application.Run(new Chat(user))).Start();
+                        this.Close();
 
                         return;
                     }
