@@ -82,7 +82,9 @@ namespace SignIn
                 Id = lastIdUser + 1,
                 Name = txbName.Text,
                 Email = txbEmail.Text,
-                Password = txbPassword.Text
+                Password = txbPassword.Text,
+                IsOnline = false,
+                DateTime = DateTime.Now,
             };
             users.Add(newUser);
             await _client.SetAsync("Users/", users);

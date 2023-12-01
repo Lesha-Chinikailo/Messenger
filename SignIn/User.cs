@@ -13,6 +13,8 @@ namespace SignIn
         public string Name { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
+        public bool IsOnline { get; set; }
+        public DateTime DateTime { get; set; }
 
         public override bool Equals(object? obj)
         {

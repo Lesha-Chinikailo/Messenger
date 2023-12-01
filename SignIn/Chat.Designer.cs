@@ -30,9 +30,11 @@
         {
             splitContainer1 = new SplitContainer();
             listUsers = new ListBox();
+            labLastTime = new Label();
+            labUserName = new Label();
+            rtbMessages = new RichTextBox();
             btnSend = new Button();
             txbMessage = new TextBox();
-            rtbMessages = new RichTextBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -51,13 +53,14 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(labLastTime);
+            splitContainer1.Panel2.Controls.Add(labUserName);
             splitContainer1.Panel2.Controls.Add(rtbMessages);
             splitContainer1.Panel2.Controls.Add(btnSend);
             splitContainer1.Panel2.Controls.Add(txbMessage);
             splitContainer1.Size = new Size(891, 537);
             splitContainer1.SplitterDistance = 203;
             splitContainer1.TabIndex = 0;
-            splitContainer1.SplitterMoved += splitContainer1_SplitterMoved;
             // 
             // listUsers
             // 
@@ -68,6 +71,36 @@
             listUsers.Name = "listUsers";
             listUsers.Size = new Size(203, 537);
             listUsers.TabIndex = 0;
+            listUsers.SelectedIndexChanged += listUsers_SelectedIndexChanged;
+            // 
+            // labLastTime
+            // 
+            labLastTime.AutoSize = true;
+            labLastTime.Font = new Font("Segoe UI", 6F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            labLastTime.Location = new Point(6, 25);
+            labLastTime.Name = "labLastTime";
+            labLastTime.Size = new Size(57, 15);
+            labLastTime.TabIndex = 4;
+            labLastTime.Text = "Last Time";
+            labLastTime.Visible = false;
+            // 
+            // labUserName
+            // 
+            labUserName.AutoSize = true;
+            labUserName.Location = new Point(3, 3);
+            labUserName.Name = "labUserName";
+            labUserName.Size = new Size(94, 25);
+            labUserName.TabIndex = 3;
+            labUserName.Text = "UserName";
+            labUserName.Visible = false;
+            // 
+            // rtbMessages
+            // 
+            rtbMessages.Location = new Point(12, 305);
+            rtbMessages.Name = "rtbMessages";
+            rtbMessages.Size = new Size(660, 172);
+            rtbMessages.TabIndex = 2;
+            rtbMessages.Text = "";
             // 
             // btnSend
             // 
@@ -77,6 +110,7 @@
             btnSend.TabIndex = 1;
             btnSend.Text = "send";
             btnSend.UseVisualStyleBackColor = true;
+            btnSend.Click += btnSend_Click;
             // 
             // txbMessage
             // 
@@ -84,14 +118,6 @@
             txbMessage.Name = "txbMessage";
             txbMessage.Size = new Size(536, 31);
             txbMessage.TabIndex = 0;
-            // 
-            // rtbMessages
-            // 
-            rtbMessages.Location = new Point(12, 32);
-            rtbMessages.Name = "rtbMessages";
-            rtbMessages.Size = new Size(660, 445);
-            rtbMessages.TabIndex = 2;
-            rtbMessages.Text = "";
             // 
             // Chat
             // 
@@ -101,6 +127,7 @@
             Controls.Add(splitContainer1);
             Name = "Chat";
             Text = "Chat";
+            FormClosed += Chat_FormClosed;
             Load += Chat_Load;
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
@@ -117,5 +144,7 @@
         private Button btnSend;
         private TextBox txbMessage;
         private RichTextBox rtbMessages;
+        private Label labLastTime;
+        private Label labUserName;
     }
 }
