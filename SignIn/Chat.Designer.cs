@@ -30,9 +30,9 @@
         {
             splitContainer1 = new SplitContainer();
             listUsers = new ListBox();
+            panelMessages = new Panel();
             labLastTime = new Label();
             labUserName = new Label();
-            rtbMessages = new RichTextBox();
             btnSend = new Button();
             txbMessage = new TextBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -53,9 +53,9 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(panelMessages);
             splitContainer1.Panel2.Controls.Add(labLastTime);
             splitContainer1.Panel2.Controls.Add(labUserName);
-            splitContainer1.Panel2.Controls.Add(rtbMessages);
             splitContainer1.Panel2.Controls.Add(btnSend);
             splitContainer1.Panel2.Controls.Add(txbMessage);
             splitContainer1.Size = new Size(891, 537);
@@ -72,6 +72,14 @@
             listUsers.Size = new Size(203, 537);
             listUsers.TabIndex = 0;
             listUsers.SelectedIndexChanged += listUsers_SelectedIndexChanged;
+            // 
+            // panelMessages
+            // 
+            panelMessages.AutoScroll = true;
+            panelMessages.Location = new Point(12, 54);
+            panelMessages.Name = "panelMessages";
+            panelMessages.Size = new Size(660, 423);
+            panelMessages.TabIndex = 5;
             // 
             // labLastTime
             // 
@@ -93,14 +101,6 @@
             labUserName.TabIndex = 3;
             labUserName.Text = "UserName";
             labUserName.Visible = false;
-            // 
-            // rtbMessages
-            // 
-            rtbMessages.Location = new Point(12, 305);
-            rtbMessages.Name = "rtbMessages";
-            rtbMessages.Size = new Size(660, 172);
-            rtbMessages.TabIndex = 2;
-            rtbMessages.Text = "";
             // 
             // btnSend
             // 
@@ -143,8 +143,8 @@
         private ListBox listUsers;
         private Button btnSend;
         private TextBox txbMessage;
-        private RichTextBox rtbMessages;
         private Label labLastTime;
         private Label labUserName;
+        private Panel panelMessages;
     }
 }

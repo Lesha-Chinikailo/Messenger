@@ -92,17 +92,14 @@ namespace SignIn
             {
                 Invoke((Action)(() =>
                 {
-                    MessageBox.Show($"{thisUser.Name}");
                     if (senderUserId != -1)
-                        rtbMessages.Text += $"{senderUserId}: {message}";
+                        MessageBox.Show($"{senderUserId}: {message}");
                     else
                     {
                         int receiverID = int.Parse(message);
-                        MessageBox.Show(message);
                         List<User> user = users.Where(u => u.Id == receiverID).ToList();
                         if(user.Count != 0)
                         {
-                            MessageBox.Show($"{user[0].Name}");
                             user[0].IsOnline = true;
                             if (user[0].Name == labUserName.Text)
                                 labLastTime.Text = "online";
@@ -117,7 +114,7 @@ namespace SignIn
                 Invoke((Action)(() =>
                 {
                     var user = users.Where(u => u.Id == senderUserId).ToList()[0];
-                    rtbMessages.Text += $"{user.Name}: {message}... for{receiverId}";
+                    createLabelMessage(senderUserId, message);
                 }));
             });
 
@@ -133,7 +130,7 @@ namespace SignIn
             }
             catch (Exception ex)
             {
-                rtbMessages.Text += ex.Message;
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -154,7 +151,7 @@ namespace SignIn
                     {
                         usersId = new Dictionary<string, string>();
                     }
-                    usersId.Add($"{thisUser.Name}:{ thisUser.Id}", connectionId);
+                    usersId.Add($"{thisUser.Name}:{thisUser.Id}", connectionId);
                     thisConnectionId = connectionId;
                     _client.Set("WhoIsOnline/", usersId);
                 }
@@ -224,7 +221,6 @@ namespace SignIn
                 MessageBox.Show("you don't send anyone message");
                 return;
             }
-            rtbMessages.Text = "";
             foreach (var fromMessage in ourMessage.messages)
             {
                 List<string> strings = fromMessage.Split(":", 2).ToList();
@@ -241,20 +237,19 @@ namespace SignIn
             Label labelMessage = new Label
             {
                 Text = fromId == thisUser.Id ? $"I:{message}" : $"{companion.Name}:{message}",
-                //Size = new Size(150, message.Length * 3),
+                Size = new Size(225, (message.Length < 15) ? 30 : (message.Length < 55 ? message.Length / 15 * 30 : (message.Length < 100 ? message.Length / 20 * 30 : message.Length / 25 * 30))),
                 BorderStyle = BorderStyle.Fixed3D,
-                AutoSize = true,
+                //AutoSize = true,
                 //Dock = from == thisUser.Id ? DockStyle.Left : DockStyle.Right,
                 //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
             };
             if (fromId == thisUser.Id)
-                labelMessage.Location = new Point(splitContainer1.Panel2.Width - labelMessage.Width - 50, messageDepth);
+                labelMessage.Location = new Point(splitContainer1.Panel2.Width - labelMessage.Width - 100, messageDepth);
             else
                 labelMessage.Location = new Point(10, messageDepth);
             messageDepth += (labelMessage.Height + 10);
-            splitContainer1.Panel2.Controls.Add(labelMessage);
+            panelMessages.Controls.Add(labelMessage);
             //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
-            rtbMessages.Text += message;
         }
 
         async private void btnSend_Click(object sender, EventArgs e)
@@ -278,6 +273,7 @@ namespace SignIn
             }
             if (users[indexSelectedUser].IsOnline)
                 SendMessageToOne(users[indexSelectedUser].Id, txbMessage.Text);
+            createLabelMessage(thisUser.Id, txbMessage.Text);
             //await connection.InvokeAsync("Send", thisUser.Id, txbMessage.Text);
         sendMessage:
             if (ourMessage == null)
@@ -299,9 +295,9 @@ namespace SignIn
             txbMessage.Text = string.Empty;
         }
 
-        async private void SendMessageToOne(int id, string message)
+        async private void SendMessageToOne(int receiverId, string message)
         {
-            FirebaseResponse response = _client.Get($"Users/{id}");
+            FirebaseResponse response = _client.Get($"Users/{receiverId}");
             User user = response.ResultAs<User>();
             string userConnectionId = _client.Get($"WhoIsOnline/{user.Name}:{user.Id}").ResultAs<string>();
             await connection.InvokeAsync("SendToUser", thisUser.Id, userConnectionId, message);
