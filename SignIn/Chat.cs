@@ -12,6 +12,10 @@ using FireSharp.Config;
 using FireSharp.Interfaces;
 using FireSharp.Response;
 
+using Microsoft.AspNetCore.SignalR.Client;
+
+using Google.Cloud.Firestore;
+
 namespace SignIn
 {
     public partial class Chat : Form
@@ -27,8 +31,13 @@ namespace SignIn
         User companion;
         ChatMessages ourMessage;
         string FromTo;
+        string thisConnectionId;
         int indexSelectedUser;
         int messageDepth;
+
+        HubConnection connection;
+
+        FirestoreDb database;
         public Chat(User thisUser)
         {
             InitializeComponent();
@@ -37,6 +46,10 @@ namespace SignIn
             indexSelectedUser = -1;
             messageDepth = 50;
             this.Text += $" ({thisUser.Name})";
+
+            connection = new HubConnectionBuilder()
+            .WithUrl("http://192.168.56.1:5153/chat")
+            .Build();
         }
         private void listUsers_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -68,7 +81,98 @@ namespace SignIn
                 MessageBox.Show("Connection Fail.");
                 return;
             }
+            InitializeSignalR();
             DisplayUsers();
+            //database = FirestoreDb.Create();
+        }
+
+        private async void InitializeSignalR()
+        {
+            connection.On<int, string>("Receive", (senderUserId, message) =>
+            {
+                Invoke((Action)(() =>
+                {
+                    MessageBox.Show($"{thisUser.Name}");
+                    if (senderUserId != -1)
+                        rtbMessages.Text += $"{senderUserId}: {message}";
+                    else
+                    {
+                        int receiverID = int.Parse(message);
+                        MessageBox.Show(message);
+                        List<User> user = users.Where(u => u.Id == receiverID).ToList();
+                        if(user.Count != 0)
+                        {
+                            MessageBox.Show($"{user[0].Name}");
+                            user[0].IsOnline = true;
+                            if (user[0].Name == labUserName.Text)
+                                labLastTime.Text = "online";
+                        }
+                        
+                    }
+                }));
+            });
+
+            connection.On<int, string, string>("ReceiveToUser", (senderUserId, message, receiverId) =>
+            {
+                Invoke((Action)(() =>
+                {
+                    var user = users.Where(u => u.Id == senderUserId).ToList()[0];
+                    rtbMessages.Text += $"{user.Name}: {message}... for{receiverId}";
+                }));
+            });
+
+
+            try
+            {
+                // подключемся к хабу
+                await connection.StartAsync();
+
+                await connection.InvokeAsync("Send", -1, $"{thisUser.Id}");
+
+                PushId(connection.ConnectionId);
+            }
+            catch (Exception ex)
+            {
+                rtbMessages.Text += ex.Message;
+            }
+        }
+
+        async private void PushId(string connectionId)
+        {
+            Dictionary<string, string> usersId = new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(connectionId))
+            {
+                FirebaseResponse response = _client.Get($"WhoIsOnline/{thisUser.Name}:{thisUser.Id}");
+                if (response.Body == "null")
+                {
+                    response = _client.Get("WhoIsOnline/");
+                    if(response.Body != "null")
+                    {
+                        usersId = response.ResultAs<Dictionary<string, string>>();
+                    }
+                    else
+                    {
+                        usersId = new Dictionary<string, string>();
+                    }
+                    usersId.Add($"{thisUser.Name}:{ thisUser.Id}", connectionId);
+                    thisConnectionId = connectionId;
+                    _client.Set("WhoIsOnline/", usersId);
+                }
+                else
+                {
+                    string str = response.ResultAs<string>();
+                    thisConnectionId = connectionId;
+                    usersId[$"{thisUser.Name}:{thisUser.Id}"] = thisConnectionId;
+                    await _client.UpdateAsync("WhoIsOnline/", usersId);
+                }
+                //usersId.Add($"{thisUser.Name}:{thisUser.Id}", connectionId);
+                //await _client.SetAsync("WhoIsOnline/", usersId);
+            }
+            else
+            {
+                MessageBox.Show("what don't work");
+                return;
+            }
         }
 
         private void DisplayUsers()
@@ -127,25 +231,30 @@ namespace SignIn
                 int from = int.Parse(strings[0]);
                 string message = strings[1];
 
-                Label labelMessage = new Label
-                {
-                    Text = from == thisUser.Id ? $"I:{message}" : $"{companion.Name}:{message}",
-                    //Size = new Size(150, message.Length * 3),
-                    BorderStyle = BorderStyle.Fixed3D,
-                    AutoSize = true,
-                    //Dock = from == thisUser.Id ? DockStyle.Left : DockStyle.Right,
-                    //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
-                };
-                if (from == thisUser.Id)
-                    labelMessage.Location = new Point(splitContainer1.Panel2.Width - labelMessage.Width - 50, messageDepth);
-                else
-                    labelMessage.Location = new Point(10, messageDepth);
-                messageDepth += (labelMessage.Height + 10);
-                splitContainer1.Panel2.Controls.Add(labelMessage);
-                //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
-                rtbMessages.Text += message;
+                createLabelMessage(from, message);
             }
 
+        }
+
+        private void createLabelMessage(int fromId,  string message)
+        {
+            Label labelMessage = new Label
+            {
+                Text = fromId == thisUser.Id ? $"I:{message}" : $"{companion.Name}:{message}",
+                //Size = new Size(150, message.Length * 3),
+                BorderStyle = BorderStyle.Fixed3D,
+                AutoSize = true,
+                //Dock = from == thisUser.Id ? DockStyle.Left : DockStyle.Right,
+                //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
+            };
+            if (fromId == thisUser.Id)
+                labelMessage.Location = new Point(splitContainer1.Panel2.Width - labelMessage.Width - 50, messageDepth);
+            else
+                labelMessage.Location = new Point(10, messageDepth);
+            messageDepth += (labelMessage.Height + 10);
+            splitContainer1.Panel2.Controls.Add(labelMessage);
+            //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
+            rtbMessages.Text += message;
         }
 
         async private void btnSend_Click(object sender, EventArgs e)
@@ -167,8 +276,9 @@ namespace SignIn
                 goto sendMessage;
                 //return;
             }
-
-
+            if (users[indexSelectedUser].IsOnline)
+                SendMessageToOne(users[indexSelectedUser].Id, txbMessage.Text);
+            //await connection.InvokeAsync("Send", thisUser.Id, txbMessage.Text);
         sendMessage:
             if (ourMessage == null)
             {
@@ -189,6 +299,14 @@ namespace SignIn
             txbMessage.Text = string.Empty;
         }
 
+        async private void SendMessageToOne(int id, string message)
+        {
+            FirebaseResponse response = _client.Get($"Users/{id}");
+            User user = response.ResultAs<User>();
+            string userConnectionId = _client.Get($"WhoIsOnline/{user.Name}:{user.Id}").ResultAs<string>();
+            await connection.InvokeAsync("SendToUser", thisUser.Id, userConnectionId, message);
+        }
+
         private void Chat_FormClosed(object sender, FormClosedEventArgs e)
         {
             FirebaseResponse response = _client.Get("Users/");
@@ -197,6 +315,21 @@ namespace SignIn
             users[users.IndexOf(thisUser)].IsOnline = false;
             users[users.IndexOf(thisUser)].DateTime = DateTime.Now;
             _client.Set("Users/", users);
+
+            DeleteConnectionId();
+        }
+
+        async private void DeleteConnectionId()
+        {
+            Dictionary<string, string> usersId;
+            FirebaseResponse response = _client.Get("WhoIsOnline/");
+
+            usersId = response.ResultAs<Dictionary<string, string>>();
+            usersId[$"{thisUser.Name}:{thisUser.Id}"] = "null";
+            await _client.UpdateAsync("WhoIsOnline/", usersId);
+
+            //await _client.UpdateAsync($"WhoIsOnline/{thisUser.Name}:{thisUser.Id}", "null");
+
         }
     }
 }

@@ -74,9 +74,9 @@ namespace SignIn
                     return;
                 }
             }
-            lastIdUser = users.Last().Id;
+            
         createUser:
-
+            lastIdUser = users.Last().Id;
             User newUser = new User()
             {
                 Id = lastIdUser + 1,
@@ -88,6 +88,7 @@ namespace SignIn
             };
             users.Add(newUser);
             await _client.SetAsync("Users/", users);
+            await _client.SetAsync($"WhoIsOnline/{newUser.Name}:{newUser.Id}", "null");
 
             txbEmail.Text = string.Empty;
             txbPassword.Text = string.Empty;
