@@ -64,12 +64,12 @@
             // 
             // listUsers
             // 
-            listUsers.Dock = DockStyle.Fill;
+            listUsers.Dock = DockStyle.Top;
             listUsers.FormattingEnabled = true;
             listUsers.ItemHeight = 25;
             listUsers.Location = new Point(0, 0);
             listUsers.Name = "listUsers";
-            listUsers.Size = new Size(203, 537);
+            listUsers.Size = new Size(203, 379);
             listUsers.TabIndex = 0;
             listUsers.SelectedIndexChanged += listUsers_SelectedIndexChanged;
             // 

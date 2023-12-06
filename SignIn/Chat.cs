@@ -14,7 +14,6 @@ using FireSharp.Response;
 
 using Microsoft.AspNetCore.SignalR.Client;
 
-using Google.Cloud.Firestore;
 
 namespace SignIn
 {
@@ -27,17 +26,20 @@ namespace SignIn
         };
         private IFirebaseClient _client;
         List<User> users;
+        List<ChatGroup> chatGroups;
+        Dictionary<string, ChatMessages> chatMessages;
         User thisUser;
         User companion;
         ChatMessages ourMessage;
         string FromTo;
         string thisConnectionId;
         int indexSelectedUser;
+        int indexSelectedGroup;
         int messageDepth;
+        const string ONLINE = "online";
 
         HubConnection connection;
 
-        FirestoreDb database;
         public Chat(User thisUser)
         {
             InitializeComponent();
@@ -48,7 +50,7 @@ namespace SignIn
             this.Text += $" ({thisUser.Name})";
 
             connection = new HubConnectionBuilder()
-            .WithUrl("http://192.168.56.1:5153/chat")
+            .WithUrl("http://192.168.43.245:5153/chat")
             .Build();
         }
         private void listUsers_SelectedIndexChanged(object sender, EventArgs e)
@@ -56,12 +58,43 @@ namespace SignIn
             if (listUsers.SelectedIndex == indexSelectedUser)
                 return;
             indexSelectedUser = listUsers.SelectedIndex;
-            companion = users[indexSelectedUser];
-            DisplayUserMessages(users[indexSelectedUser]);
-            labLastTime.Visible = true;
-            labUserName.Visible = true;
-            labUserName.Text = users[indexSelectedUser].Name;
-            labLastTime.Text = users[indexSelectedUser].IsOnline ? "online" : users[indexSelectedUser].DateTime.ToString(); 
+            if (indexSelectedUser < users.Count)
+            {
+                ourMessage = null;
+                companion = users[indexSelectedUser];
+                DisplayUserMessages(users[indexSelectedUser]);
+                labLastTime.Visible = true;
+                labUserName.Visible = true;
+                labUserName.Text = users[indexSelectedUser].Name;
+                DateTime dateTimeUser = users[indexSelectedUser].DateTime;
+                if (users[indexSelectedUser].IsOnline)
+                {
+                    labLastTime.Text = ONLINE;
+                }
+                else if(DateTime.Now.Day == users[indexSelectedUser].DateTime.Day)
+                {
+                    
+                    labLastTime.Text = $"last seen at {dateTimeUser.Hour}:{dateTimeUser.Minute}";
+                }
+                else if(DateTime.Now.Day - 1 == users[indexSelectedUser].DateTime.Day)
+                {
+                    labLastTime.Text = $"last seen yesterday at {dateTimeUser.Hour}:{dateTimeUser.Minute}";
+                }
+                else
+                {
+                    labLastTime.Text = $"last seen {dateTimeUser.Day}.{dateTimeUser.Month}.{dateTimeUser.Year} {dateTimeUser.Hour}:{dateTimeUser.Minute}";
+                }
+            }
+            else
+            {
+                indexSelectedGroup = indexSelectedUser - users.Count;
+                DisplayGroupMessages(indexSelectedGroup);
+                string nameGroup = chatGroups.FirstOrDefault(g => g.Id == indexSelectedGroup).Name;
+                labUserName.Text = nameGroup;
+                labUserName.Visible = true;
+                labLastTime.Visible = false;
+            }
+            
         }
         private void Chat_Load(object sender, EventArgs e)
         {
@@ -83,7 +116,24 @@ namespace SignIn
             }
             InitializeSignalR();
             DisplayUsers();
-            //database = FirestoreDb.Create();
+
+            DisplayGroup();
+        }
+
+        private void DisplayGroup()
+        {
+            FirebaseResponse response = _client.Get("Group/");
+            if (response.Body == "null")
+            {
+                MessageBox.Show("don't have group");
+                return;
+            }
+            chatGroups = response.ResultAs<List<ChatGroup>>();
+
+            foreach (var group in chatGroups)
+            {
+                listUsers.Items.Add(group.Name + " (Group)");
+            }
         }
 
         private async void InitializeSignalR()
@@ -93,18 +143,38 @@ namespace SignIn
                 Invoke((Action)(() =>
                 {
                     if (senderUserId != -1)
-                        MessageBox.Show($"{senderUserId}: {message}");
+                    {
+                        int receiverID = int.Parse(message);
+                        List<User> user = users.Where(u => u.Id == receiverID).ToList();
+                        if (user.Count != 0)
+                        {
+                            user[0].IsOnline = false;
+                            if (user[0].Name == labUserName.Text)
+                                labLastTime.Text = "last seen recently";
+                        }
+                    }
                     else
                     {
                         int receiverID = int.Parse(message);
                         List<User> user = users.Where(u => u.Id == receiverID).ToList();
-                        if(user.Count != 0)
+                        if (user.Count != 0)
                         {
                             user[0].IsOnline = true;
                             if (user[0].Name == labUserName.Text)
                                 labLastTime.Text = "online";
                         }
-                        
+
+                    }
+                }));
+            });
+
+            connection.On<int, string, int>("ReceiveToGroup", (senderUserId, message, groupId) =>
+            {
+                Invoke((Action)(() =>
+                {
+                    if(labUserName.Text == chatGroups.FirstOrDefault(g => g.Id == groupId).Name)
+                    {
+                        createLabelMessage(senderUserId, message);
                     }
                 }));
             });
@@ -143,7 +213,7 @@ namespace SignIn
                 if (response.Body == "null")
                 {
                     response = _client.Get("WhoIsOnline/");
-                    if(response.Body != "null")
+                    if (response.Body != "null")
                     {
                         usersId = response.ResultAs<Dictionary<string, string>>();
                     }
@@ -162,8 +232,6 @@ namespace SignIn
                     usersId[$"{thisUser.Name}:{thisUser.Id}"] = thisConnectionId;
                     await _client.UpdateAsync("WhoIsOnline/", usersId);
                 }
-                //usersId.Add($"{thisUser.Name}:{thisUser.Id}", connectionId);
-                //await _client.SetAsync("WhoIsOnline/", usersId);
             }
             else
             {
@@ -195,7 +263,8 @@ namespace SignIn
         }
         private void DisplayUserMessages(User user)
         {
-            //splitContainer1.Panel2.Controls.Clear();
+            panelMessages.Controls.Clear();
+            messageDepth = 0;
             FirebaseResponse response = _client.Get("Chat/");
             if (response.Body == "null")
             {
@@ -203,7 +272,7 @@ namespace SignIn
                 return;
             }
 
-            Dictionary<string, ChatMessages> chatMessages = response.ResultAs<Dictionary<string, ChatMessages>>();
+            chatMessages = response.ResultAs<Dictionary<string, ChatMessages>>();
 
             foreach (var message in chatMessages)
             {
@@ -229,19 +298,29 @@ namespace SignIn
 
                 createLabelMessage(from, message);
             }
+            
 
         }
 
-        private void createLabelMessage(int fromId,  string message)
+        private void createLabelMessage(int fromId, string message)
         {
+            string nameAndMessage;
+            int messageAndNameLenght;
+            if (fromId == thisUser.Id)
+            {
+                nameAndMessage = $"I:{message}";
+                messageAndNameLenght = message.Length + 2;
+            }
+            else
+            {
+                nameAndMessage = $"{users.FirstOrDefault(u => u.Id == fromId).Name}:{message}";
+                messageAndNameLenght = message.Length + users.FirstOrDefault(u => u.Id == fromId).Name.Length;
+            }
             Label labelMessage = new Label
             {
-                Text = fromId == thisUser.Id ? $"I:{message}" : $"{companion.Name}:{message}",
-                Size = new Size(225, (message.Length < 15) ? 30 : (message.Length < 55 ? message.Length / 15 * 30 : (message.Length < 100 ? message.Length / 20 * 30 : message.Length / 25 * 30))),
+                Text = nameAndMessage,
+                Size = new Size(250, (messageAndNameLenght < 15) ? 40 : (messageAndNameLenght < 55 ? messageAndNameLenght / 17 * 30 : (messageAndNameLenght < 100 ? messageAndNameLenght / 20 * 30 : messageAndNameLenght / 25 * 30))),
                 BorderStyle = BorderStyle.Fixed3D,
-                //AutoSize = true,
-                //Dock = from == thisUser.Id ? DockStyle.Left : DockStyle.Right,
-                //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
             };
             if (fromId == thisUser.Id)
                 labelMessage.Location = new Point(splitContainer1.Panel2.Width - labelMessage.Width - 100, messageDepth);
@@ -249,7 +328,6 @@ namespace SignIn
                 labelMessage.Location = new Point(10, messageDepth);
             messageDepth += (labelMessage.Height + 10);
             panelMessages.Controls.Add(labelMessage);
-            //Location = new Point(splitContainer1.Panel2.Width - Width, messageDepth)
         }
 
         async private void btnSend_Click(object sender, EventArgs e)
@@ -264,35 +342,49 @@ namespace SignIn
                 MessageBox.Show("enter your message");
                 return;
             }
-            FirebaseResponse response = _client.Get("Chat/");
-            if (response.Body == "null")
+            if(indexSelectedUser >= users.Count)
             {
-                MessageBox.Show("no one don't use chat");
-                goto sendMessage;
-                //return;
+                SendInGroup(indexSelectedGroup, txbMessage.Text);
             }
-            if (users[indexSelectedUser].IsOnline)
-                SendMessageToOne(users[indexSelectedUser].Id, txbMessage.Text);
-            createLabelMessage(thisUser.Id, txbMessage.Text);
-            //await connection.InvokeAsync("Send", thisUser.Id, txbMessage.Text);
-        sendMessage:
-            if (ourMessage == null)
+            else
             {
-                ourMessage = new ChatMessages()
+                FirebaseResponse response = _client.Get("Chat/");
+                if (response.Body == "null")
                 {
-                    user1ID = thisUser.Id,
-                    user2ID = users[indexSelectedUser].Id,
-                    messages = new List<string>()
-                };
+                    MessageBox.Show("no one don't use chat");
+                    goto sendMessage;
+                    //return;
+                }
+                if (users[indexSelectedUser].IsOnline)
+                    SendMessageToOne(users[indexSelectedUser].Id, txbMessage.Text);
+                createLabelMessage(thisUser.Id, txbMessage.Text);
+            //await connection.InvokeAsync("Send", thisUser.Id, txbMessage.Text);
+            sendMessage:
+                if (ourMessage == null)
+                {
+                    ourMessage = new ChatMessages()
+                    {
+                        user1ID = thisUser.Id,
+                        user2ID = users[indexSelectedUser].Id,
+                        messages = new List<string>()
+                    };
+                }
+                ourMessage.messages.Add($"{thisUser.Id}:{txbMessage.Text}");
+                if (chatMessages.ContainsKey($"{ourMessage.user1ID}:{ourMessage.user2ID}"))
+                    chatMessages[$"{ourMessage.user1ID}:{ourMessage.user2ID}"].messages = ourMessage.messages;
+                else
+                    chatMessages.Add($"{ourMessage.user1ID}:{ourMessage.user2ID}", ourMessage);
+                await _client.UpdateAsync("Chat/", chatMessages);
             }
-            ourMessage.messages.Add($"{thisUser.Id}:{txbMessage.Text}");
-
-            Dictionary<string, ChatMessages> chat = new Dictionary<string, ChatMessages>
-            {
-                { $"{ourMessage.user1ID}:{ourMessage.user2ID}", ourMessage }
-            };
-            await _client.SetAsync("Chat/", chat);
+            
             txbMessage.Text = string.Empty;
+        }
+
+        async private void SendInGroup(int selectedIndex, string message)
+        {
+            chatGroups[selectedIndex].Messages.Add($"{thisUser.Id}:{message}");
+            await _client.UpdateAsync($"Group/{selectedIndex}", chatGroups[selectedIndex]);
+            await connection.InvokeAsync("SendToGroup", thisUser.Id, message, 0);
         }
 
         async private void SendMessageToOne(int receiverId, string message)
@@ -303,7 +395,7 @@ namespace SignIn
             await connection.InvokeAsync("SendToUser", thisUser.Id, userConnectionId, message);
         }
 
-        private void Chat_FormClosed(object sender, FormClosedEventArgs e)
+        async private void Chat_FormClosed(object sender, FormClosedEventArgs e)
         {
             FirebaseResponse response = _client.Get("Users/");
             users = response.ResultAs<List<User>>();
@@ -313,6 +405,7 @@ namespace SignIn
             _client.Set("Users/", users);
 
             DeleteConnectionId();
+            await connection.InvokeAsync("Send", 0, $"{thisUser.Id}");
         }
 
         async private void DeleteConnectionId()
@@ -324,8 +417,32 @@ namespace SignIn
             usersId[$"{thisUser.Name}:{thisUser.Id}"] = "null";
             await _client.UpdateAsync("WhoIsOnline/", usersId);
 
-            //await _client.UpdateAsync($"WhoIsOnline/{thisUser.Name}:{thisUser.Id}", "null");
+        }
+        private void DisplayGroupMessages(int idGroup)
+        {
+            panelMessages.Controls.Clear();
+            messageDepth = 0;
+            FirebaseResponse response = _client.Get($"Group/");
+            if (response.Body == "null")
+            {
+                MessageBox.Show("nobody don't use this group");
+                return;
+            }
+            chatGroups = response.ResultAs<List<ChatGroup>>();
+
+            ChatGroup group = chatGroups.Where(c => c.Id == idGroup).ToList()[0];
+            if (group.Messages.Count == 0)
+                MessageBox.Show("no one sent messages");
+            foreach (var messages in group.Messages)
+            {
+                List<string> strings = messages.Split(":", 2).ToList();
+                int from = int.Parse(strings[0]);
+                string message = strings[1];
+
+                createLabelMessage(from, message);
+            }
 
         }
+       
     }
 }

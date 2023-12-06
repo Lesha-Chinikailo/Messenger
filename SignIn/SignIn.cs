@@ -71,6 +71,8 @@ namespace SignIn
 
                         return;
                     }
+                    MessageBox.Show("wrong password");
+                    return;
                 }
             }
         end:
@@ -82,9 +84,6 @@ namespace SignIn
             new Thread(() => Application.Run(new Registration())).Start();
             this.Close();
 
-            //Registration registration = new Registration();
-            //this.Hide();
-            //registration.ShowDialog();
         }
 
         private void SignIn_FormClosed(object sender, FormClosedEventArgs e)
