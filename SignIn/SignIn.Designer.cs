@@ -57,7 +57,7 @@
             btnSignIn.Location = new Point(324, 351);
             btnSignIn.Name = "btnSignIn";
             btnSignIn.Size = new Size(112, 34);
-            btnSignIn.TabIndex = 2;
+            btnSignIn.TabIndex = 3;
             btnSignIn.Text = "Sign in";
             btnSignIn.UseVisualStyleBackColor = true;
             btnSignIn.Click += btnSignIn_Click;
@@ -68,7 +68,7 @@
             linkSignUp.Location = new Point(284, 431);
             linkSignUp.Name = "linkSignUp";
             linkSignUp.Size = new Size(197, 25);
-            linkSignUp.TabIndex = 3;
+            linkSignUp.TabIndex = 4;
             linkSignUp.TabStop = true;
             linkSignUp.Text = "Don't have an account?";
             linkSignUp.LinkClicked += linkSignUp_LinkClicked;
@@ -77,8 +77,9 @@
             // 
             txbPassword.Location = new Point(264, 204);
             txbPassword.Name = "txbPassword";
+            txbPassword.PasswordChar = '*';
             txbPassword.Size = new Size(261, 31);
-            txbPassword.TabIndex = 5;
+            txbPassword.TabIndex = 2;
             // 
             // labPassword
             // 
@@ -86,7 +87,7 @@
             labPassword.Location = new Point(171, 207);
             labPassword.Name = "labPassword";
             labPassword.Size = new Size(87, 25);
-            labPassword.TabIndex = 4;
+            labPassword.TabIndex = 5;
             labPassword.Text = "Password";
             // 
             // SignIn

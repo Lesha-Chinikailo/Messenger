@@ -74,9 +74,13 @@ namespace SignIn
                     return;
                 }
             }
-            
-        createUser:
+            if(txbPassword.Text != txbConfirmPassword.Text)
+            {
+                MessageBox.Show("Passwords are different, enter passwords and try again");
+                return;
+            }
             lastIdUser = users.Last().Id;
+        createUser:
             User newUser = new User()
             {
                 Id = lastIdUser + 1,
@@ -93,6 +97,8 @@ namespace SignIn
             txbEmail.Text = string.Empty;
             txbPassword.Text = string.Empty;
             txbName.Text = string.Empty;
+
+            this.Close();
         }
 
 

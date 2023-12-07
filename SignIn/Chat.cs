@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.Linq;
@@ -13,6 +14,7 @@ using FireSharp.Interfaces;
 using FireSharp.Response;
 
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.VisualBasic.ApplicationServices;
 
 
 namespace SignIn
@@ -50,7 +52,7 @@ namespace SignIn
             this.Text += $" ({thisUser.Name})";
 
             connection = new HubConnectionBuilder()
-            .WithUrl("http://192.168.43.245:5153/chat")
+            .WithUrl($"http://{ConfigurationManager.AppSettings.Get("serverIp")}:{ConfigurationManager.AppSettings.Get("serverPort")}/chat")
             .Build();
         }
         private void listUsers_SelectedIndexChanged(object sender, EventArgs e)
@@ -68,22 +70,13 @@ namespace SignIn
                 labUserName.Text = users[indexSelectedUser].Name;
                 DateTime dateTimeUser = users[indexSelectedUser].DateTime;
                 if (users[indexSelectedUser].IsOnline)
-                {
                     labLastTime.Text = ONLINE;
-                }
                 else if(DateTime.Now.Day == users[indexSelectedUser].DateTime.Day)
-                {
-                    
                     labLastTime.Text = $"last seen at {dateTimeUser.Hour}:{dateTimeUser.Minute}";
-                }
                 else if(DateTime.Now.Day - 1 == users[indexSelectedUser].DateTime.Day)
-                {
                     labLastTime.Text = $"last seen yesterday at {dateTimeUser.Hour}:{dateTimeUser.Minute}";
-                }
                 else
-                {
                     labLastTime.Text = $"last seen {dateTimeUser.Day}.{dateTimeUser.Month}.{dateTimeUser.Year} {dateTimeUser.Hour}:{dateTimeUser.Minute}";
-                }
             }
             else
             {
@@ -116,7 +109,6 @@ namespace SignIn
             }
             InitializeSignalR();
             DisplayUsers();
-
             DisplayGroup();
         }
 
@@ -235,7 +227,7 @@ namespace SignIn
             }
             else
             {
-                MessageBox.Show("what don't work");
+                MessageBox.Show("something doesn't work");
                 return;
             }
         }
@@ -319,7 +311,7 @@ namespace SignIn
             Label labelMessage = new Label
             {
                 Text = nameAndMessage,
-                Size = new Size(250, (messageAndNameLenght < 15) ? 40 : (messageAndNameLenght < 55 ? messageAndNameLenght / 17 * 30 : (messageAndNameLenght < 100 ? messageAndNameLenght / 20 * 30 : messageAndNameLenght / 25 * 30))),
+                Size = new Size(250, (messageAndNameLenght < 15) ? 30 : (messageAndNameLenght < 55 ? messageAndNameLenght / 15 * 30 : (messageAndNameLenght < 100 ? messageAndNameLenght / 20 * 30 : messageAndNameLenght / 25 * 30))),
                 BorderStyle = BorderStyle.Fixed3D,
             };
             if (fromId == thisUser.Id)

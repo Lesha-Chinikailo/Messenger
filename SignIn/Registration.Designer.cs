@@ -36,12 +36,14 @@
             labEmail = new Label();
             txbPassword = new TextBox();
             labPassword = new Label();
+            txbConfirmPassword = new TextBox();
+            labConfirmPassword = new Label();
             SuspendLayout();
             // 
             // labName
             // 
             labName.AutoSize = true;
-            labName.Location = new Point(194, 118);
+            labName.Location = new Point(128, 118);
             labName.Name = "labName";
             labName.Size = new Size(56, 25);
             labName.TabIndex = 0;
@@ -59,7 +61,7 @@
             btnSignUp.Location = new Point(318, 363);
             btnSignUp.Name = "btnSignUp";
             btnSignUp.Size = new Size(112, 34);
-            btnSignUp.TabIndex = 2;
+            btnSignUp.TabIndex = 4;
             btnSignUp.Text = "Sign up";
             btnSignUp.UseVisualStyleBackColor = true;
             btnSignUp.Click += btnSignUp_Click;
@@ -70,7 +72,7 @@
             linkHaveAccount.Location = new Point(289, 442);
             linkHaveAccount.Name = "linkHaveAccount";
             linkHaveAccount.Size = new Size(188, 25);
-            linkHaveAccount.TabIndex = 3;
+            linkHaveAccount.TabIndex = 5;
             linkHaveAccount.TabStop = true;
             linkHaveAccount.Text = "I already have account";
             linkHaveAccount.LinkClicked += linkHaveAccount_LinkClicked;
@@ -80,12 +82,12 @@
             txbEmail.Location = new Point(289, 172);
             txbEmail.Name = "txbEmail";
             txbEmail.Size = new Size(210, 31);
-            txbEmail.TabIndex = 5;
+            txbEmail.TabIndex = 2;
             // 
             // labEmail
             // 
             labEmail.AutoSize = true;
-            labEmail.Location = new Point(194, 172);
+            labEmail.Location = new Point(128, 175);
             labEmail.Name = "labEmail";
             labEmail.Size = new Size(54, 25);
             labEmail.TabIndex = 4;
@@ -95,23 +97,43 @@
             // 
             txbPassword.Location = new Point(289, 226);
             txbPassword.Name = "txbPassword";
+            txbPassword.PasswordChar = '*';
             txbPassword.Size = new Size(210, 31);
-            txbPassword.TabIndex = 7;
+            txbPassword.TabIndex = 3;
             // 
             // labPassword
             // 
             labPassword.AutoSize = true;
-            labPassword.Location = new Point(194, 229);
+            labPassword.Location = new Point(128, 229);
             labPassword.Name = "labPassword";
             labPassword.Size = new Size(89, 25);
             labPassword.TabIndex = 6;
             labPassword.Text = "password";
+            // 
+            // txbConfirmPassword
+            // 
+            txbConfirmPassword.Location = new Point(289, 279);
+            txbConfirmPassword.Name = "txbConfirmPassword";
+            txbConfirmPassword.PasswordChar = '*';
+            txbConfirmPassword.Size = new Size(210, 31);
+            txbConfirmPassword.TabIndex = 7;
+            // 
+            // labConfirmPassword
+            // 
+            labConfirmPassword.AutoSize = true;
+            labConfirmPassword.Location = new Point(128, 279);
+            labConfirmPassword.Name = "labConfirmPassword";
+            labConfirmPassword.Size = new Size(155, 25);
+            labConfirmPassword.TabIndex = 8;
+            labConfirmPassword.Text = "confirm password";
             // 
             // Registration
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(736, 476);
+            Controls.Add(txbConfirmPassword);
+            Controls.Add(labConfirmPassword);
             Controls.Add(txbPassword);
             Controls.Add(labPassword);
             Controls.Add(txbEmail);
@@ -138,5 +160,7 @@
         private Label labEmail;
         private TextBox txbPassword;
         private Label labPassword;
+        private TextBox txbConfirmPassword;
+        private Label labConfirmPassword;
     }
 }
