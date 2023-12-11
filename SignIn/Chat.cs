@@ -64,19 +64,21 @@ namespace SignIn
             {
                 ourMessage = null;
                 companion = users[indexSelectedUser];
-                DisplayUserMessages(users[indexSelectedUser]);
-                labLastTime.Visible = true;
-                labUserName.Visible = true;
+                labLastTime.Visible = false;
+                labUserName.Visible = false;
                 labUserName.Text = users[indexSelectedUser].Name;
                 DateTime dateTimeUser = users[indexSelectedUser].DateTime;
                 if (users[indexSelectedUser].IsOnline)
                     labLastTime.Text = ONLINE;
-                else if(DateTime.Now.Day == users[indexSelectedUser].DateTime.Day)
-                    labLastTime.Text = $"last seen at {dateTimeUser.Hour}:{dateTimeUser.Minute}";
-                else if(DateTime.Now.Day - 1 == users[indexSelectedUser].DateTime.Day)
-                    labLastTime.Text = $"last seen yesterday at {dateTimeUser.Hour}:{dateTimeUser.Minute}";
+                else if (DateTime.Now.Day == users[indexSelectedUser].DateTime.Day)
+                    labLastTime.Text = $"last seen at {dateTimeUser.Hour.ToString().PadLeft(2, '0')}:{dateTimeUser.Minute.ToString().PadLeft(2, '0')}";
+                else if (DateTime.Now.Day - 1 == users[indexSelectedUser].DateTime.Day)
+                    labLastTime.Text = $"last seen yesterday at {dateTimeUser.Hour.ToString().PadLeft(2, '0')}:{dateTimeUser.Minute.ToString().PadLeft(2, '0')}";
                 else
-                    labLastTime.Text = $"last seen {dateTimeUser.Day}.{dateTimeUser.Month}.{dateTimeUser.Year} {dateTimeUser.Hour}:{dateTimeUser.Minute}";
+                    labLastTime.Text = $"last seen {dateTimeUser.Day.ToString().PadLeft(2, '0')}.{dateTimeUser.Month.ToString().PadLeft(2, '0')}.{dateTimeUser.Year} at {dateTimeUser.Hour.ToString().PadLeft(2, '0')}:{dateTimeUser.Minute.ToString().PadLeft(2, '0')}";
+                labLastTime.Visible = true;
+                labUserName.Visible = true;
+                DisplayUserMessages(users[indexSelectedUser]);
             }
             else
             {
@@ -87,7 +89,7 @@ namespace SignIn
                 labUserName.Visible = true;
                 labLastTime.Visible = false;
             }
-            
+
         }
         private void Chat_Load(object sender, EventArgs e)
         {
@@ -164,7 +166,7 @@ namespace SignIn
             {
                 Invoke((Action)(() =>
                 {
-                    if(labUserName.Text == chatGroups.FirstOrDefault(g => g.Id == groupId).Name)
+                    if (labUserName.Text == chatGroups.FirstOrDefault(g => g.Id == groupId).Name)
                     {
                         createLabelMessage(senderUserId, message);
                     }
@@ -175,8 +177,11 @@ namespace SignIn
             {
                 Invoke((Action)(() =>
                 {
-                    var user = users.Where(u => u.Id == senderUserId).ToList()[0];
-                    createLabelMessage(senderUserId, message);
+                    if(senderUserId == users[indexSelectedUser].Id)
+                    {
+                        var user = users.Where(u => u.Id == senderUserId).ToList()[0];
+                        createLabelMessage(senderUserId, message);
+                    }
                 }));
             });
 
@@ -279,7 +284,13 @@ namespace SignIn
             }
             if (ourMessage == null)
             {
-                MessageBox.Show("you don't send anyone message");
+                panelMessages.Controls.Add(new Label()
+                {
+                    Text = "you don't send anyone message",
+                    Size = new Size(350, 50),
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                });
                 return;
             }
             foreach (var fromMessage in ourMessage.messages)
@@ -290,7 +301,7 @@ namespace SignIn
 
                 createLabelMessage(from, message);
             }
-            
+
 
         }
 
@@ -334,7 +345,9 @@ namespace SignIn
                 MessageBox.Show("enter your message");
                 return;
             }
-            if(indexSelectedUser >= users.Count)
+            if(messageDepth == 0)
+                panelMessages.Controls.Clear();
+            if (indexSelectedUser >= users.Count)
             {
                 SendInGroup(indexSelectedGroup, txbMessage.Text);
             }
@@ -368,7 +381,7 @@ namespace SignIn
                     chatMessages.Add($"{ourMessage.user1ID}:{ourMessage.user2ID}", ourMessage);
                 await _client.UpdateAsync("Chat/", chatMessages);
             }
-            
+
             txbMessage.Text = string.Empty;
         }
 
@@ -398,6 +411,8 @@ namespace SignIn
 
             DeleteConnectionId();
             await connection.InvokeAsync("Send", 0, $"{thisUser.Id}");
+
+            Application.Exit();
         }
 
         async private void DeleteConnectionId()
@@ -435,6 +450,13 @@ namespace SignIn
             }
 
         }
-       
+
+        private void txbMessage_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if(e.KeyChar == 13)
+            {
+                btnSend_Click(this.btnSend, e);
+            }
+        }
     }
 }

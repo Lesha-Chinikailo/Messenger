@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SignIn));
             labEmail = new Label();
             txbEmail = new TextBox();
             btnSignIn = new Button();
@@ -101,6 +102,7 @@
             Controls.Add(btnSignIn);
             Controls.Add(txbEmail);
             Controls.Add(labEmail);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "SignIn";
             Text = "SignIn";
             FormClosed += SignIn_FormClosed;

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Chat));
             splitContainer1 = new SplitContainer();
             listUsers = new ListBox();
             panelMessages = new Panel();
@@ -118,6 +119,7 @@
             txbMessage.Name = "txbMessage";
             txbMessage.Size = new Size(536, 31);
             txbMessage.TabIndex = 0;
+            txbMessage.KeyPress += txbMessage_KeyPress;
             // 
             // Chat
             // 
@@ -125,6 +127,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(891, 537);
             Controls.Add(splitContainer1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Chat";
             Text = "Chat";
             FormClosed += Chat_FormClosed;

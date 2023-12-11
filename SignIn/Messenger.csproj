@@ -6,7 +6,12 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>bin\Debug\net8.0-windows\icon_messenger.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="bin\Debug\net8.0-windows\icon_messenger.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FireSharp" Version="2.0.4" />
